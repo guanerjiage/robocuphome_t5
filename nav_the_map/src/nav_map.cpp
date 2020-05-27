@@ -3,8 +3,49 @@
 #include <geometry_msgs/Twist.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
+#include <moveit/move_group_interface/move_group_interface.h>
+#include <string>
+#include <vector>
+#include <map>
+
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
+
+int move_head()
+{
+	ROS_INFO("Reach the move it function");
+	// correspond to x, y, z, r, p, y
+	std::map<std::string, double> target_position;
+  	target_position["head_1_joint"] = 0;
+  	target_position["head_2_joint"] = -0.7;
+	std::vector<std::string> torso_head_joint_names;
+	//select group of joints
+	moveit::planning_interface::MoveGroupInterface group_head_torso("head");
+	//choose your preferred planner
+	group_head_torso.setPlannerId("SBLkConfigDefault");
+	group_head_torso.setPoseReferenceFrame("base_footprint");
+	ros::AsyncSpinner spinner(1); 
+	spinner.start();
+
+	torso_head_joint_names = group_head_torso.getJoints();
+	group_head_torso.setStartStateToCurrentState();
+	group_head_torso.setMaxVelocityScalingFactor(1.0);
+	
+	for (unsigned int i = 0; i < torso_head_joint_names.size(); ++i)
+    if ( target_position.count(torso_head_joint_names[i]) > 0 )
+    {
+      ROS_INFO_STREAM("\t" << torso_head_joint_names[i] << " goal position: " << target_position[torso_head_joint_names[i]]);
+      group_head_torso.setJointValueTarget(torso_head_joint_names[i], target_position[torso_head_joint_names[i]]);
+    }
+	moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+  	group_head_torso.setPlanningTime(5.0);
+  	group_head_torso.plan(my_plan);
+	group_head_torso.move();
+	
+	spinner.stop();			
+
+	return 0;
+}
 
 int main(int argc, char** argv)
 {
@@ -33,7 +74,7 @@ int main(int argc, char** argv)
 	msg.angular.x = 0;
 	msg.angular.y = 0;
 	msg.angular.z = 2;
-	int c = 20;
+	int c = 30;
 	while(c)
 	{
 		pub.publish(msg);
@@ -45,23 +86,24 @@ int main(int argc, char** argv)
 	ROS_INFO("call service clear costmap");
 
 
-	double target[3][2] = {-3.6, -2.2110, -4.2158, -6.2962, -1.7398, -11.9647};
+	double target[4] = {0.6535, 0.4, 0.71, 0.702};
 	int count = 0;
 	while (ros::ok())
 	{
 		move_base_msgs::MoveBaseGoal goal;
 		goal.target_pose.header.frame_id = "map";
 		goal.target_pose.header.stamp = ros::Time::now();
-		goal.target_pose.pose.position.x = target[count][0];
-		goal.target_pose.pose.position.y = target[count][1];
-		goal.target_pose.pose.orientation.w = 1;
-		ROS_INFO_STREAM("Sending goal to position "<<char('A'+count));
+		goal.target_pose.pose.position.x = target[0];
+		goal.target_pose.pose.position.y = target[1];
+		goal.target_pose.pose.orientation.z = target[2];
+		goal.target_pose.pose.orientation.w = target[3];
+		ROS_INFO_STREAM("Sending goal to position.");
 		ac.sendGoal(goal);
 		ac.waitForResult();
 		if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
 		{
-			ROS_INFO_STREAM("Reach position "<<char('A'+count));
-			count=(count+1)%3;
+			ROS_INFO_STREAM("Reach position.");
+			move_head();
 		}
 		else
 			ROS_INFO("Failed to move forward to the target");

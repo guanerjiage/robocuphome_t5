@@ -2,7 +2,7 @@
 <launch>
 
     <!-- Select a world to spawn the robot -->
-    <arg name="world_suffix" default="empty"/>
+    <arg name="world_suffix" default="tutorial5"/>
 
     <!-- Initial position for the robot -->
     <arg name="robot_pos" default="-x 0.0 -y 0 -z 0 -Y 0"/>
