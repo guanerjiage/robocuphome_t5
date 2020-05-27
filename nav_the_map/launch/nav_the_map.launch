@@ -1,0 +1,16 @@
+<launch>
+
+<include file="$(find tiago_2dnav_gazebo)/launch/tiago_navigation.launch">
+    <arg name="public_sim" value="true"/>
+    <arg name="lost" value="true"/>
+    <arg name="gzpose" value="-x 1.5 -y -3.0 -z 0.0 -R 0.0 -P 0.0 -Y 0.0"/>
+</include>
+<!--
+<node pkg="rosservice" type="rosservice" name="global_loc" args="call  /global_localization" />
+-->
+
+<node name="nav_the_map_node" pkg="nav_the_map" type="nav_the_map_node"/>
+
+</launch>
+
+
