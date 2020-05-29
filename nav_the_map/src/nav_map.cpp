@@ -13,47 +13,7 @@
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> head_control_client;
 typedef boost::shared_ptr< head_control_client>  head_control_client_Ptr;
-/*void move_head()
-{
-	ROS_INFO("Reach the move it function");
-	// correspond to x, y, z, r, p, y
-	std::map<std::string, double> target_position;
-  	target_position["head_1_joint"] = 0;
-  	target_position["head_2_joint"] = -0.65;
-	std::vector<std::string> torso_head_joint_names;
-	//select group of joints
-	moveit::planning_interface::MoveGroupInterface group_head_torso("head");
-	//choose your preferred planner
-	group_head_torso.setPlannerId("SBLkConfigDefault");
-	group_head_torso.setPoseReferenceFrame("base_footprint");
-	ros::AsyncSpinner spinner(1); 
-	spinner.start();
 
-	torso_head_joint_names = group_head_torso.getJoints();
-	group_head_torso.setStartStateToCurrentState();
-	group_head_torso.setMaxVelocityScalingFactor(1.0);
-	
-	for (unsigned int i = 0; i < torso_head_joint_names.size(); ++i)
-    if ( target_position.count(torso_head_joint_names[i]) > 0 )
-    {
-      ROS_INFO_STREAM("\t" << torso_head_joint_names[i] << " goal position: " << target_position[torso_head_joint_names[i]]);
-      group_head_torso.setJointValueTarget(torso_head_joint_names[i], target_position[torso_head_joint_names[i]]);
-    }
-	moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-  	group_head_torso.setPlanningTime(5.0);
-  	group_head_torso.plan(my_plan);
-	group_head_torso.move();
-	
-	spinner.stop();			
-
-	//return 0;
-}*/
-int move_head()
-{
-
-
-  return 0;
-}
 void createHeadClient(head_control_client_Ptr& actionClient)
 {
   ROS_INFO("Creating action client to head controller ...");

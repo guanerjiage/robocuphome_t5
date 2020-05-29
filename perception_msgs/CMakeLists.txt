@@ -25,14 +25,14 @@ add_message_files(
 	DIRECTORY msg
 	FILES   
 	Rect.msg
-        RectArray.msg	
+  RectArray.msg	
 )
 
 ## Generate services 
-add_service_files(
-	  DIRECTORY srv
-	  FILES
-)
+#add_service_files(
+#	  DIRECTORY srv
+#	  FILES
+#)
 
 
 ## Generate added messages and services with any dependencies listed here

@@ -8,6 +8,8 @@
 </include>
 
 <include file="$(find darknet_ros)/launch/darknet_ros.launch">
+    <arg name="image" value="/xtion/rgb/image_raw" />
+    <arg name="network_param_file"  value="$(find darknet_ros)/config/yolov3.yaml"/>
 </include>
 
 <node name="object_detection_main" pkg="object_detection" type="object_detection_main" output="screen"/>
