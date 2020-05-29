@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <include file="$(find object_detection)/launch/object_detection.launch">
+    </include>
+    <node name="from2Dto3D_main" pkg="from2Dto3D" type="from2Dto3D_main" output="screen"/>
+ 
+</launch>

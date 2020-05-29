@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(nav_the_map)
+project(object_detection)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+# add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -11,18 +11,19 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  move_base_msgs 
-  actionlib
-  geometry_msgs
-   moveit_core 
-  moveit_ros_planning 
-  moveit_ros_planning_interface
+  cv_bridge
+  image_transport
+  tf
+  image_geometry
+  darknet_ros_msgs
+  perception_msgs
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(Eigen3 REQUIRED)
-add_definitions(${EIGEN_DEFINITIONS})
+find_package(OpenCV REQUIRED)
+find_package(PCL REQUIRED)
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -109,11 +110,10 @@ add_definitions(${EIGEN_DEFINITIONS})
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES navigate_the_map
-#  CATKIN_DEPENDS roscpp rospy std_msgs
-#  DEPENDS system_lib
+catkin_package(INCLUDE_DIRS include
+
+	LIBRARIES object_recognition
+	CATKIN_DEPENDS roscpp rospy std_msgs cv_bridge image_transport tf image_geometry
 )
 
 ###########
@@ -123,14 +123,15 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
   ${catkin_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIRS}
+  include
+  ${PCL_INCLUDE_DIRS}
+ 
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/navigate_the_map.cpp
+#   src/${PROJECT_NAME}/object_detection.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -141,14 +142,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/navigate_the_map_node.cpp)
-#TODO:
-add_executable(nav_the_map_node src/nav_map.cpp)
-target_link_libraries(nav_the_map_node ${catkin_LIBRARIES} ${roscpp_LIBRARIES} )
-
-add_executable(move_head src/move_head.cpp)
-target_link_libraries(move_head ${catkin_LIBRARIES} ${roscpp_LIBRARIES} )
-add_dependencies(move_head ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_executable(${PROJECT_NAME}_node src/object_detection_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -212,10 +206,48 @@ add_dependencies(move_head ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_navigate_the_map.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_object_detection.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+add_library(object_detection_function src/object_detection_function.cpp)
+target_link_libraries(object_detection_function
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+add_dependencies(object_detection_function ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+
+add_executable(object_detection_main src/object_detection_main.cpp)
+add_dependencies(object_detection_main ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(object_detection_main ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${PCL_LIBRARIES} object_detection_function)
+
+
+
+
+
+#add_dependencies(node_objectRecognition ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+install(TARGETS object_detection_function 
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+ RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
