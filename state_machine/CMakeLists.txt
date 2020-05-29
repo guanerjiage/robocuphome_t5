@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(nav_the_map)
+project(state_machine)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -8,13 +8,14 @@ add_compile_options(-std=c++11)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  actionlib
+  geometry_msgs
+  move_base_msgs
   roscpp
   rospy
   std_msgs
-  move_base_msgs 
-  actionlib
-  geometry_msgs
-   moveit_core 
+  message_generation
+  moveit_core 
   moveit_ros_planning 
   moveit_ros_planning_interface
 )
@@ -61,11 +62,10 @@ add_definitions(${EIGEN_DEFINITIONS})
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+   FILES
+   command.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -75,10 +75,10 @@ add_definitions(${EIGEN_DEFINITIONS})
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+    std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -111,8 +111,8 @@ add_definitions(${EIGEN_DEFINITIONS})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES navigate_the_map
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  LIBRARIES state_machine
+   CATKIN_DEPENDS actionlib geometry_msgs move_base_msgs roscpp rospy std_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -130,7 +130,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/navigate_the_map.cpp
+#   src/${PROJECT_NAME}/state_machine.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -141,14 +141,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/navigate_the_map_node.cpp)
-#TODO:
-add_executable(nav_the_map_node src/nav_map.cpp)
-target_link_libraries(nav_the_map_node ${catkin_LIBRARIES} ${roscpp_LIBRARIES} )
-
-add_executable(move_head src/move_head.cpp)
-target_link_libraries(move_head ${catkin_LIBRARIES} ${roscpp_LIBRARIES} )
-add_dependencies(move_head ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_executable(${PROJECT_NAME}_node src/state_machine_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -164,7 +157,13 @@ add_dependencies(move_head ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+add_executable(state_machine_node src/state_machine.cpp)
+target_link_libraries(state_machine_node ${catkin_LIBRARIES} ${roscpp_LIBRARIES})
+add_dependencies(state_machine_node state_machine_generate_messages_cpp) 
 
+add_executable(move_node src/nav_map.cpp)
+target_link_libraries(move_node ${catkin_LIBRARIES} ${roscpp_LIBRARIES})
+add_dependencies(move_node state_machine_generate_messages_cpp) 
 #############
 ## Install ##
 #############
@@ -212,7 +211,7 @@ add_dependencies(move_head ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_navigate_the_map.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_state_machine.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

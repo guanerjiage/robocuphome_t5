@@ -12,9 +12,8 @@
     <arg name="network_param_file"  value="$(find darknet_ros)/config/yolov3.yaml"/>
 </include>
 
-<node name="object_detection_main" pkg="object_detection" type="object_detection_main" output="screen"/>
-<node name="from2Dto3D_main" pkg="from2Dto3D" type="from2Dto3D_main" output="screen"/>
-<node name="nav_the_map_node" pkg="nav_the_map" type="nav_the_map_node"/>
+<node name="state_machine_node" pkg="state_machine" type="state_machine_node"/>
+<node name="move_node" pkg="state_machine" type="move_node"/>
 
 </launch>
 

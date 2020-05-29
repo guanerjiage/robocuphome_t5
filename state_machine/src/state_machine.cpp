@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
+#include <state_machine/command.h>
 #include <geometry_msgs/Twist.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
@@ -32,7 +33,6 @@ void createHeadClient(head_control_client_Ptr& actionClient)
     throw std::runtime_error("Error in createArmClient: arm controller action server not available");
 }
 
-
 // Generates a simple trajectory with two waypoints to move TIAGo's arm 
 void waypoints_head_goal(control_msgs::FollowJointTrajectoryGoal& goal)
 {
@@ -62,21 +62,10 @@ void waypoints_head_goal(control_msgs::FollowJointTrajectoryGoal& goal)
 
 }
 
-int main(int argc, char** argv)
+// localization and look down to the table
+void init(ros::NodeHandle n)
 {
-	ros::init(argc, argv, "nav_the_map");
-	ros::NodeHandle n;
-
-	//tell the action client that we want to spin a thread by default
-	MoveBaseClient ac("move_base", true);
-
-	//wait for the action server to come up
-	while(!ac.waitForServer(ros::Duration(5.0)))
-	{
-		ROS_INFO("Waiting for the move_base action server to come up");
-	}
-
-	// initial localization
+    // initial localization
 	std_srvs::Empty srv;
 	ros::service::call("/global_localization", srv);
 	ROS_INFO("call service global localization");
@@ -101,47 +90,41 @@ int main(int argc, char** argv)
 	ROS_INFO("call service clear costmap");
 
 
-	double target[4] = {0.6535, 0.4, 0.71, 0.702};
-	int count = 0;
-	while (ros::ok())
+    head_control_client_Ptr headClient;
+    createHeadClient(headClient);
+    control_msgs::FollowJointTrajectoryGoal head_goal;
+    waypoints_head_goal(head_goal);
+
+    // Sends the command to start the given trajectory 1s from now
+    head_goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(1.0);
+    headClient->sendGoal(head_goal);
+
+    // Wait for trajectory execution
+    while(!(headClient->getState().isDone()) && ros::ok())
+    {
+        ros::Duration(4).sleep(); // sleep for four seconds
+    }
+}
+
+
+int main(int argc, char** argv)
+{
+	ros::init(argc, argv, "nav_the_map");
+	ros::NodeHandle n;
+
+	//tell the action client that we want to spin a thread by default
+	MoveBaseClient ac("move_base", true);
+
+    ros::ServiceClient client=n.serviceClient<state_machine::command>("myMove");
+	//wait for the action server to come up
+	while(!ac.waitForServer(ros::Duration(5.0)))
 	{
-		move_base_msgs::MoveBaseGoal goal;
-		goal.target_pose.header.frame_id = "map";
-		goal.target_pose.header.stamp = ros::Time::now();
-		goal.target_pose.pose.position.x = target[0];
-		goal.target_pose.pose.position.y = target[1];
-		goal.target_pose.pose.orientation.z = target[2];
-		goal.target_pose.pose.orientation.w = target[3];
-		ROS_INFO_STREAM("Sending goal to position.");
-		ac.sendGoal(goal);
-		ac.waitForResult();
-		if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-		{
-			ROS_INFO_STREAM("Reach position.");
-			if (!ros::Time::waitForValid(ros::WallDuration(10.0))) // NOTE: Important when using simulated clock
- 		{
-   			ROS_FATAL("Timed-out waiting for valid time.");
-    			return EXIT_FAILURE;
-  		}
-			head_control_client_Ptr headClient;
-  			createHeadClient(headClient);
-			control_msgs::FollowJointTrajectoryGoal head_goal;
-  			waypoints_head_goal(head_goal);
-
-  			// Sends the command to start the given trajectory 1s from now
- 			head_goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(1.0);
-  			headClient->sendGoal(head_goal);
-
-  			// Wait for trajectory execution
- 			 while(!(headClient->getState().isDone()) && ros::ok())
-  			{
-    			ros::Duration(4).sleep(); // sleep for four seconds
-  			}
-                        return EXIT_SUCCESS;
-			//move_head();
-			}
-		else
-			ROS_INFO("Failed to move forward to the target");
-  }
-  return 0;
+		ROS_INFO("Waiting for the move_base action server to come up");
+	}
+    init(n);
+    state_machine::command msg;
+    msg.request.type = 1;
+    client.call(msg);
+    
+    ros::spin();
 }
