@@ -7,17 +7,19 @@
 #include <string>
 #include <vector>
 #include <map>
-
+#include <control_msgs/FollowJointTrajectoryAction.h>
+#include <exception>
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
-
-int move_head()
+typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> head_control_client;
+typedef boost::shared_ptr< head_control_client>  head_control_client_Ptr;
+/*void move_head()
 {
 	ROS_INFO("Reach the move it function");
 	// correspond to x, y, z, r, p, y
 	std::map<std::string, double> target_position;
   	target_position["head_1_joint"] = 0;
-  	target_position["head_2_joint"] = -0.7;
+  	target_position["head_2_joint"] = -0.65;
 	std::vector<std::string> torso_head_joint_names;
 	//select group of joints
 	moveit::planning_interface::MoveGroupInterface group_head_torso("head");
@@ -44,7 +46,60 @@ int move_head()
 	
 	spinner.stop();			
 
-	return 0;
+	//return 0;
+}*/
+int move_head()
+{
+
+
+  return 0;
+}
+void createHeadClient(head_control_client_Ptr& actionClient)
+{
+  ROS_INFO("Creating action client to head controller ...");
+
+  actionClient.reset( new head_control_client("/head_controller/follow_joint_trajectory") );
+
+  int iterations = 0, max_iterations = 3;
+  // Wait for arm controller action server to come up
+  while( !actionClient->waitForServer(ros::Duration(2.0)) && ros::ok() && iterations < max_iterations )
+  {
+    ROS_DEBUG("Waiting for the head_controller_action server to come up");
+    ++iterations;
+  }
+
+  if ( iterations == max_iterations )
+    throw std::runtime_error("Error in createArmClient: arm controller action server not available");
+}
+
+
+// Generates a simple trajectory with two waypoints to move TIAGo's arm 
+void waypoints_head_goal(control_msgs::FollowJointTrajectoryGoal& goal)
+{
+  // The joint names, which apply to all waypoints
+  goal.trajectory.joint_names.push_back("head_1_joint");
+  goal.trajectory.joint_names.push_back("head_2_joint");
+
+
+  // Two waypoints in this goal trajectory
+  goal.trajectory.points.resize(1);
+
+  // First trajectory point
+  // Positions
+  int index = 0;
+  goal.trajectory.points[index].positions.resize(2);
+  goal.trajectory.points[index].positions[0] = 0.0;
+  goal.trajectory.points[index].positions[1] = -0.65;
+
+  goal.trajectory.points[index].velocities.resize(2);
+  for (int j = 0; j < 2; ++j)
+  {
+    goal.trajectory.points[index].velocities[j] = 1.0;
+  }
+  // To be reached 2 second after starting along the trajectory
+  goal.trajectory.points[index].time_from_start = ros::Duration(2.0);
+
+
 }
 
 int main(int argc, char** argv)
@@ -103,8 +158,28 @@ int main(int argc, char** argv)
 		if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
 		{
 			ROS_INFO_STREAM("Reach position.");
-			move_head();
-		}
+			if (!ros::Time::waitForValid(ros::WallDuration(10.0))) // NOTE: Important when using simulated clock
+ 		{
+   			ROS_FATAL("Timed-out waiting for valid time.");
+    			return EXIT_FAILURE;
+  		}
+			head_control_client_Ptr headClient;
+  			createHeadClient(headClient);
+			control_msgs::FollowJointTrajectoryGoal head_goal;
+  			waypoints_head_goal(head_goal);
+
+  			// Sends the command to start the given trajectory 1s from now
+ 			head_goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(1.0);
+  			headClient->sendGoal(head_goal);
+
+  			// Wait for trajectory execution
+ 			 while(!(headClient->getState().isDone()) && ros::ok())
+  			{
+    			ros::Duration(4).sleep(); // sleep for four seconds
+  			}
+                        return EXIT_SUCCESS;
+			//move_head();
+			}
 		else
 			ROS_INFO("Failed to move forward to the target");
   }
