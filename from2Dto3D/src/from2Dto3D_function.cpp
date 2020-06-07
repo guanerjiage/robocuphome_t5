@@ -34,10 +34,10 @@ void From2Dto3D::processRect(const perception_msgs::RectArrayConstPtr& r)
           }
           else 
           {
-	    msg.header.frame_id = "xtion_rgb_optical_frame";
-	    msg.header.stamp = ros::Time();
-	    msg.point.x=pointcloud.points[position].x;
- 	    msg.point.y=pointcloud.points[position].y;
+            msg.header.frame_id = "xtion_rgb_optical_frame";
+            msg.header.stamp = ros::Time();
+            msg.point.x=pointcloud.points[position].x;
+            msg.point.y=pointcloud.points[position].y;
             msg.point.z=pointcloud.points[position].z;
 	    //transform to base_link of robot
             try
@@ -50,9 +50,9 @@ void From2Dto3D::processRect(const perception_msgs::RectArrayConstPtr& r)
               ROS_ERROR("%s", ex.what());
       	    }
 
-            ROS_INFO_STREAM("2d coordinate of "<<names[i]<<" : "<<cx<<" , "<<cy);
-            ROS_INFO_STREAM("3d coordinate of "<<names[i]<<" : "<<base_point.point.x<<" , "<<base_point.point.y<<" , "<<base_point.point.z);
-            pub_2Dto3D.publish(base_point);
+            //ROS_INFO_STREAM("2d coordinate of "<<names[i]<<" : "<<cx<<" , "<<cy);
+            //ROS_INFO_STREAM("3d coordinate of "<<names[i]<<" : "<<base_point.point.x<<" , "<<base_point.point.y<<" , "<<base_point.point.z);
+            pub_2Dto3D.publish(base_point.point);
             break;
           }
       }

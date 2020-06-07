@@ -10,6 +10,7 @@
 #include <map>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <exception>
+#include <std_srvs/Trigger.h>
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> head_control_client;
@@ -49,7 +50,7 @@ void waypoints_head_goal(control_msgs::FollowJointTrajectoryGoal& goal)
   int index = 0;
   goal.trajectory.points[index].positions.resize(2);
   goal.trajectory.points[index].positions[0] = 0.0;
-  goal.trajectory.points[index].positions[1] = -0.65;
+  goal.trajectory.points[index].positions[1] = -0.5;
 
   goal.trajectory.points[index].velocities.resize(2);
   for (int j = 0; j < 2; ++j)
@@ -65,7 +66,8 @@ void waypoints_head_goal(control_msgs::FollowJointTrajectoryGoal& goal)
 // localization and look down to the table
 void init(ros::NodeHandle n)
 {
-    // initial localization
+  // initial localization
+  /*
 	std_srvs::Empty srv;
 	ros::service::call("/global_localization", srv);
 	ROS_INFO("call service global localization");
@@ -89,21 +91,48 @@ void init(ros::NodeHandle n)
 	ros::service::call("/move_base/clear_costmaps", srv);
 	ROS_INFO("call service clear costmap");
 
+  */
+  // move the head down to look the table
+  ROS_INFO_STREAM("Move your head down.");
+  head_control_client_Ptr headClient;
+  createHeadClient(headClient);
+  control_msgs::FollowJointTrajectoryGoal head_goal;
+  waypoints_head_goal(head_goal);
+  head_goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(1.0);
+  headClient->sendGoal(head_goal);
+  // Wait for trajectory execution
+  while(!(headClient->getState().isDone()) && ros::ok())
+  {
+      ros::Duration(4).sleep(); // sleep for four seconds
+  }
+  //wait for 10 second to let homing finish
+  ros::Duration(10).sleep();
+  ROS_INFO_STREAM("Raise your hand.");
+  // raise the arm for easier planning
+  moveit::planning_interface::MoveGroupInterface group_arm_torso("arm_torso");
+  group_arm_torso.setPlannerId("SBLkConfigDefault");//choose the planner
+  group_arm_torso.setPoseReferenceFrame("base_footprint");
+  ros::AsyncSpinner spinner(1); 
+	spinner.start();
+  group_arm_torso.setStartStateToCurrentState();
+  group_arm_torso.setMaxVelocityScalingFactor(1);
+  group_arm_torso.setPlanningTime(10.0);
+  //set goal position
+  geometry_msgs::PoseStamped goal_pose;
+  goal_pose.header.stamp = ros::Time::now();
+  goal_pose.header.frame_id = "base_footprint";
+  goal_pose.pose.position.x = 0.2;
+  goal_pose.pose.position.y = -0.2;
+  goal_pose.pose.position.z = 1;
+  goal_pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(1.57, 0, 0);
+  group_arm_torso.setPoseTarget(goal_pose);//give the position
+  //set the plan
+  moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+  group_arm_torso.plan(my_plan);
+  // Execute the plan
+  group_arm_torso.move();
 
-    head_control_client_Ptr headClient;
-    createHeadClient(headClient);
-    control_msgs::FollowJointTrajectoryGoal head_goal;
-    waypoints_head_goal(head_goal);
-
-    // Sends the command to start the given trajectory 1s from now
-    head_goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(1.0);
-    headClient->sendGoal(head_goal);
-
-    // Wait for trajectory execution
-    while(!(headClient->getState().isDone()) && ros::ok())
-    {
-        ros::Duration(4).sleep(); // sleep for four seconds
-    }
+  spinner.stop();
 }
 
 
@@ -115,16 +144,25 @@ int main(int argc, char** argv)
 	//tell the action client that we want to spin a thread by default
 	MoveBaseClient ac("move_base", true);
 
-    ros::ServiceClient client=n.serviceClient<state_machine::command>("myMove");
+  ros::ServiceClient move_client=n.serviceClient<state_machine::command>("myMove");
+  ros::ServiceClient pick_client=n.serviceClient<std_srvs::Trigger>("pick");
 	//wait for the action server to come up
 	while(!ac.waitForServer(ros::Duration(5.0)))
 	{
 		ROS_INFO("Waiting for the move_base action server to come up");
 	}
     init(n);
+    // walk in front of the table
+    /*
     state_machine::command msg;
     msg.request.type = 1;
-    client.call(msg);
-    
+    move_client.call(msg);
+    */
+    std_srvs::Trigger msg;
+    ROS_INFO("start to call pick");
+	  ros::Duration(10).sleep();
+    pick_client.call(msg);
+
+
     ros::spin();
 }

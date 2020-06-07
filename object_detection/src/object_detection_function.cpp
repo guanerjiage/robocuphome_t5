@@ -13,7 +13,7 @@ void object_detection::show_class(const darknet_ros_msgs::BoundingBoxesConstPtr&
       detection_msg.width = (msg->bounding_boxes[i].xmax - msg->bounding_boxes[i].xmin);
       //pub.publish(detection_msg);
       detection_msgs.rects.push_back(detection_msg);
-      ROS_INFO_STREAM( "Get the 2D position of: " <<detection_msg.class_name << " x: " <<detection_msg.x << " y: " <<detection_msg.y << " height: " <<detection_msg.height << " width: " << detection_msg.width);
+      //ROS_INFO_STREAM( "Get the 2D position of: " <<detection_msg.class_name << " x: " <<detection_msg.x << " y: " <<detection_msg.y << " height: " <<detection_msg.height << " width: " << detection_msg.width);
             
     }
     
