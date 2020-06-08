@@ -11,6 +11,7 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <exception>
 #include <std_srvs/Trigger.h>
+#include <state_machine/lift_and_putClass.h>
 
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
@@ -143,28 +144,33 @@ int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "nav_the_map");
 	ros::NodeHandle n;
-
+ 
 	//tell the action client that we want to spin a thread by default
 	MoveBaseClient ac("move_base", true);
-
+  lift_and_putClass lp;
+  ros::AsyncSpinner spinner(1);
+    spinner.start();
+  ros::Subscriber sub = n.subscribe("/Point3D",10, &lift_and_putClass::object_cb, &lp);
   ros::ServiceClient move_client=n.serviceClient<state_machine::command>("myMove");
-  ros::ServiceClient pick_client=n.serviceClient<std_srvs::Trigger>("pick");
-  ros::ServiceClient place_client=n.serviceClient<std_srvs::Trigger>("place");
+  //ros::ServiceClient pick_client=n.serviceClient<std_srvs::Trigger>("pick");
+  //ros::ServiceClient place_client=n.serviceClient<std_srvs::Trigger>("place");
 	//wait for the action server to come up
 	while(!ac.waitForServer(ros::Duration(5.0)))
 	{
 		ROS_INFO("Waiting for the move_base action server to come up");
 	}
     init(n);
-    //lift_and_putClass lp;
-    //ros::Subscriber sub = nh.subscribe("/Point3D",10, &lift_and_putClass::object_cb, &lp);
-    //lp.pick();
+   
+    ROS_INFO("start to call pick");
+	  ros::Duration(10).sleep();
+    lp.pick();
+    lp.place();
     // walk in front of the table
     /*
     state_machine::command msg;
     msg.request.type = 1;
     move_client.call(msg);
-    */
+    
     std_srvs::Trigger msg;
     ROS_INFO("start to call pick");
 	  ros::Duration(10).sleep();
@@ -176,6 +182,7 @@ int main(int argc, char** argv)
     }
       ROS_INFO("start to call place");
     success = place_client.call(msg);
-
-    ros::spin();
+    */
+   ros::waitForShutdown();
+   // ros::spin();
 }

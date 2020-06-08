@@ -23,8 +23,9 @@ public:
     void openGripper(trajectory_msgs::JointTrajectory& posture);
     void closedGripper(trajectory_msgs::JointTrajectory& posture);
     void addCollisionObjects();
-    //bool pick();
-    bool pick(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
-    bool place(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
+    bool pick();
+    bool place();
+    //bool pick(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
+    //bool place(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
     void object_cb(const geometry_msgs::Point::ConstPtr& msg);
 };

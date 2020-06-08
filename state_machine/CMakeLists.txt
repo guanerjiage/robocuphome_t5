@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   moveit_core 
   moveit_ros_planning 
   moveit_ros_planning_interface
+  moveit_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -110,8 +111,8 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES state_machine
+  INCLUDE_DIRS include
+  LIBRARIES state_machine
    CATKIN_DEPENDS actionlib geometry_msgs move_base_msgs roscpp rospy std_msgs message_runtime
 #  DEPENDS system_lib
 )
@@ -123,7 +124,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+ include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
 )
@@ -132,6 +133,9 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/state_machine.cpp
 # )
+add_library(state_machine src/lift_and_putClass.cpp)
+target_link_libraries(state_machine ${roscpp_LIBRARIES} ${catkin_LIBRARIES})
+set_target_properties(state_machine  PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -158,8 +162,8 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 add_executable(state_machine_node src/state_machine.cpp)
-target_link_libraries(state_machine_node ${catkin_LIBRARIES} ${roscpp_LIBRARIES})
-add_dependencies(state_machine_node state_machine_generate_messages_cpp) 
+target_link_libraries(state_machine_node ${catkin_LIBRARIES} ${roscpp_LIBRARIES} state_machine)
+add_dependencies(state_machine_node state_machine_generate_messages_cpp ) 
 
 add_executable(move_node src/nav_map.cpp)
 target_link_libraries(move_node ${catkin_LIBRARIES} ${roscpp_LIBRARIES})
