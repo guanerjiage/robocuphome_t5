@@ -10,13 +10,13 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   geometry_msgs
-  message_generation
   moveit_core
   moveit_ros_planning
   moveit_ros_planning_interface
   roscpp
   rospy
   std_msgs
+  moveit_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -109,9 +109,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES lift_and_put
-#  CATKIN_DEPENDS actionlib geometry_msgs message_generation moveit_core moveit_ros_planning moveit_ros_planning_interface roscpp rospy std_msgs
+  INCLUDE_DIRS include
+  LIBRARIES lift_and_put
+  CATKIN_DEPENDS actionlib geometry_msgs moveit_core moveit_ros_planning moveit_ros_planning_interface roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 
@@ -122,14 +122,14 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+ include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/lift_and_put.cpp
-# )
+add_library(lift_and_put src/lift_and_putClass.cpp)
+target_link_libraries(lift_and_put ${roscpp_LIBRARIES} ${catkin_LIBRARIES})
+set_target_properties(lift_and_put  PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -140,7 +140,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(lift_and_put_node src/lift_and_put.cpp)
-target_link_libraries(lift_and_put_node ${catkin_LIBRARIES} ${roscpp_LIBRARIES})
+target_link_libraries(lift_and_put_node ${catkin_LIBRARIES} ${roscpp_LIBRARIES} lift_and_put)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

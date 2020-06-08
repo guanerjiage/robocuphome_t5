@@ -12,6 +12,7 @@
 #include <exception>
 #include <std_srvs/Trigger.h>
 
+
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> head_control_client;
 typedef boost::shared_ptr< head_control_client>  head_control_client_Ptr;
@@ -50,7 +51,7 @@ void waypoints_head_goal(control_msgs::FollowJointTrajectoryGoal& goal)
   int index = 0;
   goal.trajectory.points[index].positions.resize(2);
   goal.trajectory.points[index].positions[0] = 0.0;
-  goal.trajectory.points[index].positions[1] = -0.5;
+  goal.trajectory.points[index].positions[1] = -0.55;
 
   goal.trajectory.points[index].velocities.resize(2);
   for (int j = 0; j < 2; ++j)
@@ -107,11 +108,12 @@ void init(ros::NodeHandle n)
   }
   //wait for 10 second to let homing finish
   ros::Duration(10).sleep();
+  /*
   ROS_INFO_STREAM("Raise your hand.");
   // raise the arm for easier planning
   moveit::planning_interface::MoveGroupInterface group_arm_torso("arm_torso");
   group_arm_torso.setPlannerId("SBLkConfigDefault");//choose the planner
-  group_arm_torso.setPoseReferenceFrame("base_footprint");
+  group_arm_torso.setPoseReferenceFrame("base_link");
   ros::AsyncSpinner spinner(1); 
 	spinner.start();
   group_arm_torso.setStartStateToCurrentState();
@@ -120,10 +122,10 @@ void init(ros::NodeHandle n)
   //set goal position
   geometry_msgs::PoseStamped goal_pose;
   goal_pose.header.stamp = ros::Time::now();
-  goal_pose.header.frame_id = "base_footprint";
+  goal_pose.header.frame_id = "base_link";
   goal_pose.pose.position.x = 0.2;
   goal_pose.pose.position.y = -0.2;
-  goal_pose.pose.position.z = 1;
+  goal_pose.pose.position.z = 1.3;
   goal_pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(1.57, 0, 0);
   group_arm_torso.setPoseTarget(goal_pose);//give the position
   //set the plan
@@ -133,6 +135,7 @@ void init(ros::NodeHandle n)
   group_arm_torso.move();
 
   spinner.stop();
+*/
 }
 
 
@@ -146,12 +149,16 @@ int main(int argc, char** argv)
 
   ros::ServiceClient move_client=n.serviceClient<state_machine::command>("myMove");
   ros::ServiceClient pick_client=n.serviceClient<std_srvs::Trigger>("pick");
+  ros::ServiceClient place_client=n.serviceClient<std_srvs::Trigger>("place");
 	//wait for the action server to come up
 	while(!ac.waitForServer(ros::Duration(5.0)))
 	{
 		ROS_INFO("Waiting for the move_base action server to come up");
 	}
     init(n);
+    //lift_and_putClass lp;
+    //ros::Subscriber sub = nh.subscribe("/Point3D",10, &lift_and_putClass::object_cb, &lp);
+    //lp.pick();
     // walk in front of the table
     /*
     state_machine::command msg;
@@ -161,8 +168,14 @@ int main(int argc, char** argv)
     std_srvs::Trigger msg;
     ROS_INFO("start to call pick");
 	  ros::Duration(10).sleep();
-    pick_client.call(msg);
-
+    bool success = pick_client.call(msg);
+    while(!success)
+    {
+      ros::Duration(0.5).sleep();
+      ROS_INFO("waiting");
+    }
+      ROS_INFO("start to call place");
+    success = place_client.call(msg);
 
     ros::spin();
 }
