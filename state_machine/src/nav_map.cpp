@@ -51,8 +51,8 @@ bool move(state_machine::command::Request &req, state_machine::command::Response
 		//if (!ros::Time::waitForValid(ros::WallDuration(10.0))) // NOTE: Important when using simulated clock
 		//{
 		//	ROS_FATAL("Timed-out waiting for valid time.");
-	//		return EXIT_FAILURE;
-	//	}
+		//	return EXIT_FAILURE;
+		//}
 		res.reply = 1;
 	}
 	else

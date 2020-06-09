@@ -128,6 +128,7 @@ bool lift_and_putClass::pick()
     ROS_INFO_STREAM("waiting");
   
   }
+  detect_flag = false;
   ROS_INFO_STREAM("Command received, add collision");
   addCollisionObjects(1);
   ROS_INFO("add collision of object and table1 finished");
@@ -170,10 +171,11 @@ bool lift_and_putClass::pick()
   ROS_INFO_STREAM("Ready to pick");
   group.setNumPlanningAttempts(5);
   //group.pick("object", grasps);
-  while(group.pick("object", grasps)==-1)
-  {
-    addCollisionObjects(1);  
-  }
+  bool result=0;
+  if(group.pick("object", grasps)==-1) 
+    result=0;
+  else
+    result=1;
   //ROS_INFO_STREAM("return code is"<<group.pick("object", grasps));
   ROS_INFO("Finish pick");
   //remove table1
@@ -183,7 +185,7 @@ bool lift_and_putClass::pick()
   std_srvs::Empty srv;
   ros::service::call("/move_base/clear_costmaps", srv);
 	ROS_INFO("call service clear costmap");
-  return true;
+ return result;
 }
 
 bool lift_and_putClass::place()
