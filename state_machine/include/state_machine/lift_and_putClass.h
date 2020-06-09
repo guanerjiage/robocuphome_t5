@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Point.h>
+#include <std_srvs/Empty.h>
 
 // MoveIt
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
@@ -17,12 +18,13 @@ class lift_and_putClass
 private:
     geometry_msgs::Point object_position;
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+    bool detect_flag = false;
 public:
     lift_and_putClass(/* args */);
     ~lift_and_putClass();
     void openGripper(trajectory_msgs::JointTrajectory& posture);
     void closedGripper(trajectory_msgs::JointTrajectory& posture);
-    void addCollisionObjects();
+    void addCollisionObjects(int id);
     bool pick();
     bool place();
     //bool pick(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);

@@ -10,38 +10,37 @@
 #include <map>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <exception>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 bool move(state_machine::command::Request &req, state_machine::command::Response &res)
 {
-	double target[4] = {0, 0, 0, 0};
+	double target[3] = {0, 0, 0};
+	tf2::Quaternion orientation;
     switch(req.type)
 	{
 		case 1:
-			target[0] = 0.6535;
-			target[1] = 0.4;
-			target[2] = 0.71;
-			target[3] = 0.702;
+			target[0] = 0.85;
+			target[1] = 0.30+0.05;
+			target[2] = 0;
+  			orientation.setRPY(0.0, 0.0, 1.58);
 			break;
 		case 2:
-			target[0] = 0.6535;
-			target[1] = 0.4;
-			target[2] = 0.71;
-			target[3] = 0.702;
+			target[0] = -0.5;
+			target[1] = 0.2;
+			target[2] = 0.0;
+			orientation.setRPY(0.0, 0.0, 1.58);
 			break;
-		case 3:
-			break;
-		case 4:
-			break;
+		
 	}
 	move_base_msgs::MoveBaseGoal goal;
 	goal.target_pose.header.frame_id = "map";
 	goal.target_pose.header.stamp = ros::Time::now();
 	goal.target_pose.pose.position.x = target[0];
 	goal.target_pose.pose.position.y = target[1];
-	goal.target_pose.pose.orientation.z = target[2];
-	goal.target_pose.pose.orientation.w = target[3];
+	goal.target_pose.pose.position.z = target[2];
+	goal.target_pose.pose.orientation = tf2::toMsg(orientation);
 	ROS_INFO_STREAM("Sending goal to position.");
 	MoveBaseClient ac("move_base", true);
 	ac.sendGoal(goal);
@@ -49,11 +48,11 @@ bool move(state_machine::command::Request &req, state_machine::command::Response
 	if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
 	{
 		ROS_INFO_STREAM("Reach position.");
-		if (!ros::Time::waitForValid(ros::WallDuration(10.0))) // NOTE: Important when using simulated clock
-		{
-		ROS_FATAL("Timed-out waiting for valid time.");
-			return EXIT_FAILURE;
-		}
+		//if (!ros::Time::waitForValid(ros::WallDuration(10.0))) // NOTE: Important when using simulated clock
+		//{
+		//	ROS_FATAL("Timed-out waiting for valid time.");
+	//		return EXIT_FAILURE;
+	//	}
 		res.reply = 1;
 	}
 	else

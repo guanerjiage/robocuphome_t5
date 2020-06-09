@@ -45,87 +45,92 @@ void lift_and_putClass::closedGripper(trajectory_msgs::JointTrajectory& posture)
   // END_SUB_TUTORIAL
 }
 
-void lift_and_putClass::addCollisionObjects()
+void lift_and_putClass::addCollisionObjects(int id)
 {
   // Creating Environment
   std::vector<moveit_msgs::CollisionObject> collision_objects;
-  collision_objects.resize(2);
+  if(id==1) // add object and table1
+  {
+    collision_objects.resize(2);
+    // Add the first table
+    collision_objects[0].id = "table1";
+    collision_objects[0].header.frame_id = "base_link";
+    collision_objects[0].primitives.resize(1);
+    collision_objects[0].primitives[0].type = collision_objects[0].primitives[0].BOX;
+    collision_objects[0].primitives[0].dimensions.resize(3);
+    collision_objects[0].primitives[0].dimensions[0] = 0.6;
+    collision_objects[0].primitives[0].dimensions[1] = 1.2;
+    collision_objects[0].primitives[0].dimensions[2] = 0.7;
+    collision_objects[0].primitive_poses.resize(1);
+    collision_objects[0].primitive_poses[0].position.x = 1.05-0.05;
+    collision_objects[0].primitive_poses[0].position.y = 0.2;
+    collision_objects[0].primitive_poses[0].position.z = 0.25;
+    collision_objects[0].primitive_poses[0].orientation.w = 1.0;
+    collision_objects[0].operation = collision_objects[0].ADD;
 
-  // Add the first table
-  collision_objects[0].id = "table1";
-  collision_objects[0].header.frame_id = "base_link";
-
-  collision_objects[0].primitives.resize(1);
-  collision_objects[0].primitives[0].type = collision_objects[0].primitives[0].BOX;
-  collision_objects[0].primitives[0].dimensions.resize(3);
-  collision_objects[0].primitives[0].dimensions[0] = 0.6;
-  collision_objects[0].primitives[0].dimensions[1] = 1.2;
-  collision_objects[0].primitives[0].dimensions[2] = 0.7;
-
-  collision_objects[0].primitive_poses.resize(1);
-  collision_objects[0].primitive_poses[0].position.x = 1.05;
-  collision_objects[0].primitive_poses[0].position.y = 0.2;
-  collision_objects[0].primitive_poses[0].position.z = 0.25;
-  collision_objects[0].primitive_poses[0].orientation.w = 1.0;
-
-  collision_objects[0].operation = collision_objects[0].ADD;
-/*
-  // Add the second table where we will be placing the cube.
-  collision_objects[1].id = "table2";
-  collision_objects[1].header.frame_id = "map";
-
-  collision_objects[1].primitives.resize(1);
-  collision_objects[1].primitives[0].type = collision_objects[1].primitives[0].BOX;
-  collision_objects[1].primitives[0].dimensions.resize(3);
-  collision_objects[1].primitives[0].dimensions[0] = 0.4;
-  collision_objects[1].primitives[0].dimensions[1] = 0.2;
-  collision_objects[1].primitives[0].dimensions[2] = 0.4;
-
-  collision_objects[1].primitive_poses.resize(1);
-  collision_objects[1].primitive_poses[0].position.x = 0;
-  collisio8n_objects[1].primitive_poses[0].position.y = 0.5;
-  collision_objects[1].primitive_poses[0].position.z = 0.2;
-  collision_objects[1].primitive_poses[0].orientation.w = 1.0;
-
-  collision_objects[1].operation = collision_objects[1].ADD;
-*/
-  // Define the object that we will be manipulating
-  collision_objects[1].header.frame_id = "base_link";
-  collision_objects[1].id = "object";
-
-  collision_objects[1].primitives.resize(1);
-  collision_objects[1].primitives[0].type = collision_objects[1].primitives[0].BOX;
-  collision_objects[1].primitives[0].dimensions.resize(3);
-  collision_objects[1].primitives[0].dimensions[0] = 0.05/1;
-  collision_objects[1].primitives[0].dimensions[1] = 0.05/1;
-  collision_objects[1].primitives[0].dimensions[2] = 0.12/1;
-
-  /* Define the pose of the object. */
-  collision_objects[1].primitive_poses.resize(1);
-  collision_objects[1].primitive_poses[0].position.x = object_position.x;
-  collision_objects[1].primitive_poses[0].position.y = object_position.y;
-  collision_objects[1].primitive_poses[0].position.z = object_position.z;
-  collision_objects[1].primitive_poses[0].orientation.w = 1.0;
-  ROS_INFO_STREAM("x: "<<collision_objects[1].primitive_poses[0].position.x\
-                <<" y: "<<collision_objects[1].primitive_poses[0].position.y\
-                <<" z: "<<collision_objects[1].primitive_poses[0].position.z);
-  // END_SUB_TUTORIAL
-
-  collision_objects[1].operation = collision_objects[1].ADD;
-
-  planning_scene_interface.applyCollisionObjects(collision_objects);
+    // Define the object that we will be manipulating
+    collision_objects[1].header.frame_id = "base_link";
+    collision_objects[1].id = "object";
+    collision_objects[1].primitives.resize(1);
+    collision_objects[1].primitives[0].type = collision_objects[1].primitives[0].BOX;
+    collision_objects[1].primitives[0].dimensions.resize(3);
+    collision_objects[1].primitives[0].dimensions[0] = 0.05;
+    collision_objects[1].primitives[0].dimensions[1] = 0.05;
+    collision_objects[1].primitives[0].dimensions[2] = 0.12;
+    collision_objects[1].primitive_poses.resize(1);
+    collision_objects[1].primitive_poses[0].position.x = object_position.x;
+    collision_objects[1].primitive_poses[0].position.y = object_position.y;
+    collision_objects[1].primitive_poses[0].position.z = object_position.z;
+    collision_objects[1].primitive_poses[0].orientation.w = 1.0;
+    ROS_INFO_STREAM("x: "<<collision_objects[1].primitive_poses[0].position.x\
+                  <<" y: "<<collision_objects[1].primitive_poses[0].position.y\
+                  <<" z: "<<collision_objects[1].primitive_poses[0].position.z);
+    collision_objects[2].operation = collision_objects[1].ADD;
+    planning_scene_interface.applyCollisionObjects(collision_objects);
+  }
+  else if(id==2) // add collision of table 2
+  {
+    // Add the second table where we will be placing the cube.
+    collision_objects.resize(1);
+    collision_objects[0].id = "table2";
+    collision_objects[0].header.frame_id = "base_link";
+    collision_objects[0].primitives.resize(1);
+    collision_objects[0].primitives[0].dimensions[0] = 0.6;
+    collision_objects[0].primitives[0].dimensions[1] = 1.2;
+    collision_objects[0].primitives[0].dimensions[2] = 0.7;
+    collision_objects[0].primitive_poses.resize(1);
+    collision_objects[0].primitive_poses[0].position.x = 1.05;
+    collision_objects[0].primitive_poses[0].position.y = 0.2;
+    collision_objects[0].primitive_poses[0].position.z = 0.25;
+    collision_objects[0].primitive_poses[0].orientation.w = 1.0;
+    collision_objects[0].operation = collision_objects[1].ADD;
+    planning_scene_interface.addCollisionObjects(collision_objects);
+  }
+  else if(id==3) // remove the collision of table1
+  {
+    std::vector<std::string> table;
+    table.resize(1);
+    table[0]="table1";
+    planning_scene_interface.removeCollisionObjects(table);
+  }
+  
 }
 
 
 bool lift_and_putClass::pick()
 {
-  ROS_INFO_STREAM("Prepose finished");
-
+  ROS_INFO_STREAM("open detection");
+  detect_flag = true;
+  ros::WallDuration(10.0).sleep();
   while(object_position.x==0 && object_position.y==0 && object_position.z==0)
+  {
     ros::WallDuration(1.0).sleep();
-  ROS_INFO_STREAM("Command received, pick");
-  addCollisionObjects();
- 
+    ROS_INFO_STREAM("waiting");
+  
+  }
+  ROS_INFO_STREAM("Command received, add collision");
+  addCollisionObjects(1);
+  ROS_INFO("add collision of object and table1 finished");
   // Create a vector of grasps to be attempted, currently only creating single grasp.
   // This is essentially useful when using a grasp generator to generate and test multiple grasps.
   moveit::planning_interface::MoveGroupInterface group("arm_torso");
@@ -164,8 +169,20 @@ bool lift_and_putClass::pick()
   // Call pick to pick up the object using the grasps given
   ROS_INFO_STREAM("Ready to pick");
   group.setNumPlanningAttempts(5);
-  group.pick("object", grasps);
+  //group.pick("object", grasps);
+  while(group.pick("object", grasps)==-1)
+  {
+    addCollisionObjects(1);  
+  }
+  //ROS_INFO_STREAM("return code is"<<group.pick("object", grasps));
   ROS_INFO("Finish pick");
+  //remove table1
+  addCollisionObjects(3);
+  ROS_INFO("table1 removed");
+  // clear cost map for better planning
+  std_srvs::Empty srv;
+  ros::service::call("/move_base/clear_costmaps", srv);
+	ROS_INFO("call service clear costmap");
   return true;
 }
 
@@ -173,7 +190,9 @@ bool lift_and_putClass::place()
 {
   // Ideally, you would create a vector of place locations to be attempted although in this example, we only create
   // a single place location.
-  ROS_INFO_STREAM("Command received, place");
+  ROS_INFO_STREAM("Command received, add table2");
+  addCollisionObjects(2);
+  ROS_INFO("add collision of table2 finished");
   moveit::planning_interface::MoveGroupInterface group("arm_torso");
   group.setPlanningTime(45.0);
   std::vector<moveit_msgs::PlaceLocation> place_location;
@@ -208,7 +227,7 @@ bool lift_and_putClass::place()
   openGripper(place_location[0].post_place_posture);
 
   // Set support surface as table2.
-  group.setSupportSurfaceName("table1");
+  group.setSupportSurfaceName("table2");
   // Call place to place the object using the place locations given.
   group.place("object", place_location);
   // END_SUB_TUTORIAL
@@ -219,8 +238,12 @@ bool lift_and_putClass::place()
 
 void lift_and_putClass::object_cb(const geometry_msgs::Point::ConstPtr& msg)
 {
-  object_position.x = msg->x;
-  object_position.y = msg->y;
-  object_position.z = msg->z;
-  //ROS_INFO_STREAM("3d coordinate of "<<" : "<<object_position.x<<" , "<<object_position.y<<" , "<<object_position.z);
+  if(detect_flag)
+  {
+    object_position.x = msg->x;
+    object_position.y = msg->y;
+    object_position.z = msg->z;
+    ROS_INFO_STREAM("3d coordinate of "<<" : "<<object_position.x<<" , "<<object_position.y<<" , "<<object_position.z);
+
+  }
 }

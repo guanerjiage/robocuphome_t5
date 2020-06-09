@@ -69,7 +69,6 @@ void waypoints_head_goal(control_msgs::FollowJointTrajectoryGoal& goal)
 void init(ros::NodeHandle n)
 {
   // initial localization
-  /*
 	std_srvs::Empty srv;
 	ros::service::call("/global_localization", srv);
 	ROS_INFO("call service global localization");
@@ -82,7 +81,7 @@ void init(ros::NodeHandle n)
 	msg.angular.x = 0;
 	msg.angular.y = 0;
 	msg.angular.z = 2;
-	int c = 30;
+	int c = 35;
 	while(c)
 	{
 		pub.publish(msg);
@@ -93,7 +92,6 @@ void init(ros::NodeHandle n)
 	ros::service::call("/move_base/clear_costmaps", srv);
 	ROS_INFO("call service clear costmap");
 
-  */
   // move the head down to look the table
   ROS_INFO_STREAM("Move your head down.");
   head_control_client_Ptr headClient;
@@ -107,36 +105,6 @@ void init(ros::NodeHandle n)
   {
       ros::Duration(4).sleep(); // sleep for four seconds
   }
-  //wait for 10 second to let homing finish
-  ros::Duration(10).sleep();
-  /*
-  ROS_INFO_STREAM("Raise your hand.");
-  // raise the arm for easier planning
-  moveit::planning_interface::MoveGroupInterface group_arm_torso("arm_torso");
-  group_arm_torso.setPlannerId("SBLkConfigDefault");//choose the planner
-  group_arm_torso.setPoseReferenceFrame("base_link");
-  ros::AsyncSpinner spinner(1); 
-	spinner.start();
-  group_arm_torso.setStartStateToCurrentState();
-  group_arm_torso.setMaxVelocityScalingFactor(1);
-  group_arm_torso.setPlanningTime(10.0);
-  //set goal position
-  geometry_msgs::PoseStamped goal_pose;
-  goal_pose.header.stamp = ros::Time::now();
-  goal_pose.header.frame_id = "base_link";
-  goal_pose.pose.position.x = 0.2;
-  goal_pose.pose.position.y = -0.2;
-  goal_pose.pose.position.z = 1.3;
-  goal_pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(1.57, 0, 0);
-  group_arm_torso.setPoseTarget(goal_pose);//give the position
-  //set the plan
-  moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-  group_arm_torso.plan(my_plan);
-  // Execute the plan
-  group_arm_torso.move();
-
-  spinner.stop();
-*/
 }
 
 
@@ -149,40 +117,47 @@ int main(int argc, char** argv)
 	MoveBaseClient ac("move_base", true);
   lift_and_putClass lp;
   ros::AsyncSpinner spinner(1);
-    spinner.start();
+  spinner.start();
   ros::Subscriber sub = n.subscribe("/Point3D",10, &lift_and_putClass::object_cb, &lp);
   ros::ServiceClient move_client=n.serviceClient<state_machine::command>("myMove");
-  //ros::ServiceClient pick_client=n.serviceClient<std_srvs::Trigger>("pick");
-  //ros::ServiceClient place_client=n.serviceClient<std_srvs::Trigger>("place");
+
 	//wait for the action server to come up
 	while(!ac.waitForServer(ros::Duration(5.0)))
 	{
 		ROS_INFO("Waiting for the move_base action server to come up");
 	}
     init(n);
-   
-    ROS_INFO("start to call pick");
-	  ros::Duration(10).sleep();
-    lp.pick();
-    lp.place();
+    // remember the default pose
+    moveit::planning_interface::MoveGroupInterface group_arm_torso("arm_torso");
+    geometry_msgs::PoseStamped default_pose = group_arm_torso.getCurrentPose();
+    ROS_INFO("inilializition finished");
     // walk in front of the table
-    /*
     state_machine::command msg;
     msg.request.type = 1;
     move_client.call(msg);
-    
-    std_srvs::Trigger msg;
+
     ROS_INFO("start to call pick");
-	  ros::Duration(10).sleep();
-    bool success = pick_client.call(msg);
-    while(!success)
-    {
-      ros::Duration(0.5).sleep();
-      ROS_INFO("waiting");
-    }
-      ROS_INFO("start to call place");
-    success = place_client.call(msg);
-    */
-   ros::waitForShutdown();
-   // ros::spin();
+    lp.pick();
+    ROS_INFO("return from pick");
+
+    // move back to default pose
+    group_arm_torso.setPoseTarget(default_pose);
+    group_arm_torso.setStartStateToCurrentState();
+    group_arm_torso.setMaxVelocityScalingFactor(2.0);
+    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    group_arm_torso.setPlanningTime(5.0);
+    group_arm_torso.plan(my_plan);
+    ros::Time start = ros::Time::now();
+    group_arm_torso.move();
+    ROS_INFO_STREAM("Back to default pose");
+
+    ros::WallDuration(3.0).sleep();
+    // walk to the second table
+    msg.request.type = 2;
+    move_client.call(msg);
+    ROS_INFO("start to call place");
+    lp.place();
+    ROS_INFO("return from place");
+
+    ros::waitForShutdown();
 }

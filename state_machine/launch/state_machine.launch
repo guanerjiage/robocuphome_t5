@@ -5,10 +5,12 @@
     <arg name="world" value="tutorial5"/>
     <arg name="robot" value="steel"/>
     <arg name="lost" value="false"/>
-    <arg name="gzpose" default="-x 0.95  -y 0.1 -z  0.0   -R 0.0 -P 0.0 -Y 1.57" />
     <!--
-    <arg name="gzpose" default="-x 0.36  -y -1.15 -z  0.0   -R 0.0 -P 0.0 -Y 3.14" />
+    position in front of the first table, skip the navigation
+    <arg name="gzpose" default="-x 0.95  -y 0.1 -z  0.0   -R 0.0 -P 0.0 -Y 1.57" />
     -->
+    <arg name="gzpose" default="-x 0.36  -y -1.15 -z  0.0   -R 0.0 -P 0.0 -Y 3.14" />
+    
 </include>
 
 <include file="$(find darknet_ros)/launch/darknet_ros.launch">
@@ -16,12 +18,10 @@
     <arg name="network_param_file"  value="$(find darknet_ros)/config/yolov2-tiny.yaml"/>
 </include>
 
-<!--include file="$(find pal_parallel_gripper_wrapper)/launch/parallel_gripper.launch"></include-->
 <node name="object_detection_main" pkg="object_detection" type="object_detection_main" output="screen"/>
 <node name="from2Dto3D_main" pkg="from2Dto3D" type="from2Dto3D_main" output="screen"/>
 <node name="state_machine_node" pkg="state_machine" type="state_machine_node"/>
 <node name="move_node" pkg="state_machine" type="move_node"/>
-<!--node name="lift_and_put_node" pkg="lift_and_put" type="lift_and_put_node"/-->
 
 </launch>
 
