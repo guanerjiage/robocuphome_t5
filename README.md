@@ -6,5 +6,10 @@ You should put it inside the tiago workspace along with tiago package and darkne
 
 ### Things to refine later
 
-1. copy the world file int o tiago_simulation/tiago_gazebo/worlds/
-2. change the camera_reading topic to /xtion/rgb/image_raw in darknet_ros/darknet_ros/config/ros.yaml
+1. copy the world file ./ics_gazebo/worlds/tutorial5.world into tiago_simulation/tiago_gazebo/worlds/
+2. running setup.bash
+3. running roslaunch state_machine state_machine.launch
+
+### Problems
+
+The problem we encounter is the second call to move to the second desk never returns. so it cannot continue place action.

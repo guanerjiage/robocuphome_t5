@@ -65,7 +65,7 @@ void waypoints_head_goal(control_msgs::FollowJointTrajectoryGoal& goal)
 
 }
 
-bool move(int id)
+bool move(int id, MoveBaseClient &ac)
 {
 	double target[3] = {0, 0, 0};
 	tf2::Quaternion orientation;
@@ -75,11 +75,11 @@ bool move(int id)
 			target[0] = 0.85;
 			target[1] = 0.30+0.05;
 			target[2] = 0;
-  			orientation.setRPY(0.0, 0.0, 1.58);
+  		orientation.setRPY(0.0, 0.0, 1.58);
 			break;
 		case 2:
 			target[0] = -0.5;
-			target[1] = 0.3;
+			target[1] = 0.35;
 			target[2] = 0;
 			orientation.setRPY(0.0, 0.0, 1.58);
 			break;
@@ -93,17 +93,14 @@ bool move(int id)
 	goal.target_pose.pose.position.z = target[2];
 	goal.target_pose.pose.orientation = tf2::toMsg(orientation);
 	ROS_INFO_STREAM("Sending goal to position.");
-	MoveBaseClient ac("move_base", true);
 	ac.sendGoal(goal);
 	ac.waitForResult();
-	if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+	while(ac.getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
 	{
-		ROS_INFO_STREAM("Reach position.");
+    ac.sendGoal(goal);
+	  ac.waitForResult();
 	}
-	else
-	{
-		ROS_INFO("Failed to move forward to the target");
-	}
+  ROS_INFO_STREAM("end of function");
 	return true;
 }
 
@@ -145,61 +142,91 @@ void init(ros::NodeHandle n)
   // Wait for trajectory execution
   while(!(headClient->getState().isDone()) && ros::ok())
   {
-      ros::Duration(4).sleep(); // sleep for four seconds
+      ros::Duration(2).sleep(); // sleep for four seconds
   }
 }
 
 
 int main(int argc, char** argv)
 {
-	ros::init(argc, argv, "nav_the_map");
+	ros::init(argc, argv, "state_machine");
 	ros::NodeHandle n;
  
 	//tell the action client that we want to spin a thread by default
 	MoveBaseClient ac("move_base", true);
+  //wait for the action server to come up
+  while(!ac.waitForServer(ros::Duration(5.0)))
+  {
+    ROS_INFO("Waiting for the move_base action server to come up");
+  }
   lift_and_putClass lp;
-  ros::AsyncSpinner spinner(1);
-  spinner.start();
   ros::Subscriber sub = n.subscribe("/Point3D",10, &lift_and_putClass::object_cb, &lp);
   //ros::ServiceClient move_client=n.serviceClient<state_machine::command>("myMove");
+  
+  ros::AsyncSpinner spinner(1);
+  spinner.start();
+	
+  init(n);
+  // remember the default pose
+  moveit::planning_interface::MoveGroupInterface group_arm_torso("arm_torso");
+  geometry_msgs::PoseStamped default_pose = group_arm_torso.getCurrentPose();
+  ROS_INFO("inilializition finished");
 
-	//wait for the action server to come up
-	while(!ac.waitForServer(ros::Duration(5.0)))
+  // walk in front of the table
+  move_base_msgs::MoveBaseGoal goal;
+  tf2::Quaternion orientation;
+  orientation.setRPY(0.0, 0.0, 1.58);
+	goal.target_pose.header.frame_id = "map";
+	goal.target_pose.header.stamp = ros::Time::now();
+	goal.target_pose.pose.position.x = 0.85;
+	goal.target_pose.pose.position.y = 0.35;
+	goal.target_pose.pose.position.z = 0;
+	goal.target_pose.pose.orientation = tf2::toMsg(orientation);
+	ROS_INFO_STREAM("Sending goal to position.");
+	ac.sendGoal(goal);
+	ac.waitForResult();
+	if(ac.getState() != actionlib::SimpleClientGoalState::SUCCEEDED)
 	{
-		ROS_INFO("Waiting for the move_base action server to come up");
+    ac.sendGoal(goal);
+	  ac.waitForResult();
 	}
-    init(n);
-    // remember the default pose
-    moveit::planning_interface::MoveGroupInterface group_arm_torso("arm_torso");
-    geometry_msgs::PoseStamped default_pose = group_arm_torso.getCurrentPose();
-    ROS_INFO("inilializition finished");
-    // walk in front of the table
-    //state_machine::command msg;
-    //msg.request.type = 1;
-    //move_client.call(msg);
-    move(1);
-    ROS_INFO("start to call pick");
-    while(!lp.pick());
-    
-    ROS_INFO("return from pick");
 
-    // move back to default pose
-    group_arm_torso.setPoseTarget(default_pose);
-    group_arm_torso.setStartStateToCurrentState();
-    group_arm_torso.setMaxVelocityScalingFactor(2.0);
-    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    group_arm_torso.setPlanningTime(5.0);
-    group_arm_torso.plan(my_plan);
-    ros::Time start = ros::Time::now();
-    group_arm_torso.move();
-    ROS_INFO_STREAM("Back to default pose");
+  ROS_INFO("start to call pick");
+  while(!lp.pick());
+  ROS_INFO("return from pick");
 
-    ros::WallDuration(3.0).sleep();
-    // walk to the second table
-    move(2);
-    ROS_INFO("start to call place");
-    lp.place();
-    ROS_INFO("return from place");
+  // move back to default pose
+  group_arm_torso.setPoseTarget(default_pose);
+  group_arm_torso.setStartStateToCurrentState();
+  group_arm_torso.setMaxVelocityScalingFactor(2.0);
+  moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+  group_arm_torso.setPlanningTime(5.0);
+  group_arm_torso.plan(my_plan);
+  ros::Time start = ros::Time::now();
+  group_arm_torso.move();
+  ROS_INFO_STREAM("Back to default pose");
 
-    ros::waitForShutdown();
+  ros::WallDuration(3.0).sleep();
+  // walk to the second table
+	goal.target_pose.header.frame_id = "map";
+	goal.target_pose.header.stamp = ros::Time::now();
+	goal.target_pose.pose.position.x = -0.5;
+	goal.target_pose.pose.position.y = 0.35;
+	goal.target_pose.pose.position.z = 0;
+	goal.target_pose.pose.orientation = tf2::toMsg(orientation);
+	ROS_INFO_STREAM("Sending goal to position.");
+	ac.sendGoal(goal);
+	ROS_INFO("success");
+  ac.waitForResult();
+	
+  if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+	{ROS_INFO("success");
+    ac.sendGoal(goal);
+	  ac.waitForResult();
+	}
+  ROS_INFO("start to call place");
+  lp.place();
+  ROS_INFO("return from place");
+
+  ros::waitForShutdown();
 }
