@@ -95,6 +95,8 @@ void lift_and_putClass::addCollisionObjects(int id)
     collision_objects[0].id = "table2";
     collision_objects[0].header.frame_id = "base_link";
     collision_objects[0].primitives.resize(1);
+    collision_objects[0].primitives[0].type = collision_objects[0].primitives[0].BOX;
+    collision_objects[0].primitives[0].dimensions.resize(3);
     collision_objects[0].primitives[0].dimensions[0] = 0.6;
     collision_objects[0].primitives[0].dimensions[1] = 1.2;
     collision_objects[0].primitives[0].dimensions[2] = 0.7;
@@ -103,7 +105,7 @@ void lift_and_putClass::addCollisionObjects(int id)
     collision_objects[0].primitive_poses[0].position.y = 0.2;
     collision_objects[0].primitive_poses[0].position.z = 0.25;
     collision_objects[0].primitive_poses[0].orientation.w = 1.0;
-    collision_objects[0].operation = collision_objects[1].ADD;
+    collision_objects[0].operation = collision_objects[0].ADD;
     planning_scene_interface.addCollisionObjects(collision_objects);
   }
   else if(id==3) // remove the collision of table1
@@ -178,9 +180,7 @@ bool lift_and_putClass::pick()
     result=1;
   //ROS_INFO_STREAM("return code is"<<group.pick("object", grasps));
   ROS_INFO("Finish pick");
-  //remove table1
-  addCollisionObjects(3);
-  ROS_INFO("table1 removed");
+  
   // clear cost map for better planning
   std_srvs::Empty srv;
   ros::service::call("/move_base/clear_costmaps", srv);

@@ -206,6 +206,10 @@ int main(int argc, char** argv)
   group_arm_torso.move();
   ROS_INFO_STREAM("Back to default pose");
 
+  //remove table1
+  lp.addCollisionObjects(3);
+  ROS_INFO("table1 removed");
+
   ros::WallDuration(3.0).sleep();
   // walk to the second table
 	goal.target_pose.header.frame_id = "map";
